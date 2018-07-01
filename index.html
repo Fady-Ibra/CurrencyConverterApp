@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Currency Converter</title>
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="jquery-ui.min.css">    
+  </head>
+  <body>
+    <div class="ui-helper-reset ui-helper-clearfix ui-front ui-widget ui-corner-all">
+      <h1 class="ui-widget-header ui-state-highlight" style="padding: 10px">Currency Converter App</h1>
+      <div class="ui-widget-content">
+        <div style="padding: 10px">
+          <span> 1 &nbsp;&nbsp; &nbsp;&nbsp; </span>
+          <select id="select_from" class="ui-select">
+              <option value="GBP" selected="selected">GBP</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="EGP">EGP</option>
+          </select>        
+          <span> &nbsp;&nbsp; &nbsp;&nbsp; to &nbsp;&nbsp; &nbsp;&nbsp; </span>
+          <select id="select_to" class="ui-select">
+              <option value="GBP">GBP</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="EGP" selected="selected">EGP</option>              
+          </select>
+        </div>
+        <div class="ui-state-highlight" style="padding: 10px; padding-block-start: 50px; ">
+          <button id="btn_convert" class="ui-state-default ui-state-hover ui-state-focus ui-state-active ui-button">Convert</button>
+          <input type="text" id="txt_value" readonly="readonly" placeholder="Press Convert button">
+        </div>
+      </div>   
+    </div>
+    
+    <script src="db.js"></script>
+    <script src="jquery.min.js"></script>
+    <script src="jquery-ui.min.js"></script>
+    <script>
+      navigator.serviceWorker.register('sw.js');
+      $("#select_from").selectmenu();
+      $("#select_to").selectmenu();
+      $("#btn_convert").click(function() {        
+        var currId = $("#select_from").val() + "_" + $("#select_to").val();
+        $("#txt_value").val("").attr("placeholder", "Converting...");
+        
+        dbPromise.then(function(db) {
+          var tx = db.transaction('keyval');
+          var keyValStore = tx.objectStore('keyval');
+          return keyValStore.get(currId);
+        }).then(function(val) {
+          console.log('The fady value of currId is:', val);
+          if(val != undefined) $("#txt_value").val(val);
+          else {
+            console.log("fetch online");
+            var protocol = window.location.protocol.replace(/:/g,'');
+            $.getJSON(protocol + "://free.currencyconverterapi.com/api/v5/convert?q=" + currId + "&compact=y&callback=?",
+                function(data){
+                  $("#txt_value").val(data[currId].val);
+                  dbPromise.then(function(db) {
+                    var tx = db.transaction('keyval', 'readwrite');
+                    var keyValStore = tx.objectStore('keyval');
+                    keyValStore.put(data[currId].val, currId);
+                    return tx.complete;
+                  }).then(function() {
+                    console.log('Added FHP_EGP');
+                  });
+                  $("#txt_value").attr("placeholder", "Press Convert button");
+              });
+          }
+        });
+      });
+    </script>   
+  </body>
+</html>

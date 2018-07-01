@@ -48,7 +48,7 @@
           return keyValStore.get(currId);
         }).then(function(val) {
           if(val != undefined) $("#txt_value").val(val).attr("placeholder", "Press Convert button");
-          else {
+
             var url = window.location.protocol + "//free.currencyconverterapi.com/api/v5/convert?q=" + currId + "&compact=y&callback=?"
             $.getJSON(url, function(data){
               $("#txt_value").val(data[currId].val).attr("placeholder", "Press Convert button");
@@ -60,8 +60,8 @@
               }).then(function() {
                 console.log('Added New Value');
               });
-            });
-          }
+            });          
+            
         });
       });
     </script>   

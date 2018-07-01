@@ -42,30 +42,25 @@
       $("#btn_convert").click(function() {        
         var currId = $("#select_from").val() + "_" + $("#select_to").val();
         $("#txt_value").val("").attr("placeholder", "Converting...");
-        
         dbPromise.then(function(db) {
           var tx = db.transaction('keyval');
           var keyValStore = tx.objectStore('keyval');
           return keyValStore.get(currId);
         }).then(function(val) {
-          console.log('The fady value of currId is:', val);
-          if(val != undefined) $("#txt_value").val(val);
+          if(val != undefined) $("#txt_value").val(val).attr("placeholder", "Press Convert button");
           else {
-            console.log("fetch online");
-            var protocol = window.location.protocol.replace(/:/g,'');
-            $.getJSON(protocol + "://free.currencyconverterapi.com/api/v5/convert?q=" + currId + "&compact=y&callback=?",
-                function(data){
-                  $("#txt_value").val(data[currId].val);
-                  dbPromise.then(function(db) {
-                    var tx = db.transaction('keyval', 'readwrite');
-                    var keyValStore = tx.objectStore('keyval');
-                    keyValStore.put(data[currId].val, currId);
-                    return tx.complete;
-                  }).then(function() {
-                    console.log('Added FHP_EGP');
-                  });
-                  $("#txt_value").attr("placeholder", "Press Convert button");
+            var url = window.location.protocol + "//free.currencyconverterapi.com/api/v5/convert?q=" + currId + "&compact=y&callback=?"
+            $.getJSON(url, function(data){
+              $("#txt_value").val(data[currId].val).attr("placeholder", "Press Convert button");
+              dbPromise.then(function(db) {
+                var tx = db.transaction('keyval', 'readwrite');
+                var keyValStore = tx.objectStore('keyval');
+                keyValStore.put(data[currId].val, currId);
+                return tx.complete;
+              }).then(function() {
+                console.log('Added New Value');
               });
+            });
           }
         });
       });
